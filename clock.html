@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown</title>
+<link id="gfont" rel="stylesheet" href="">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0d0d0d;
+    --card-top:   #252525;
+    --card-bot:   #181818;
+    --digit:      #e8a020;
+    --glow:       rgba(232,160,32,0.25);
+    --sep:        #e8a020;
+    --fold-line:  #0d0d0d;
+    --clock-font: 'Bebas Neue', Impact, 'Arial Black', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    transition: background 0.35s;
+    font-family: var(--clock-font);
+  }
+
+  /* ── Message ── */
+  .clock-message {
+    color: #888;
+    font-size: 11px;
+    letter-spacing: 8px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    text-align: center;
+    min-height: 1em;
+  }
+
+  /* ── Clock layout ── */
+  .flip-clock {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flip-unit { display: flex; flex-direction: column; align-items: center; }
+  .flip-digits { display: flex; gap: 4px; }
+  .unit-label {
+    margin-top: 10px;
+    color: #333;
+    font-size: 9px;
+    letter-spacing: 4px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+  }
+
+  /* ── Separators ── */
+  .sep {
+    font-size: 76px;
+    color: var(--sep);
+    line-height: 100px;
+    padding: 0 2px;
+    user-select: none;
+    font-family: var(--clock-font);
+    text-shadow: 0 0 18px var(--glow);
+    transition: opacity 0.12s;
+  }
+  .sep.off { opacity: 0.12; }
+
+  /* ── Flip card ── */
+  .flip-card {
+    position: relative;
+    width: 72px;
+    height: 100px;
+    perspective: 280px;
+    border-radius: 7px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.7), 0 2px 4px rgba(0,0,0,.9),
+                inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .flip-card::after {
+    content: '';
+    position: absolute; left: 0; right: 0;
+    top: calc(50% - 1px); height: 2px;
+    background: var(--fold-line);
+    z-index: 20; pointer-events: none;
+  }
+
+  .card-top, .card-bottom, .flip-top, .flip-bottom {
+    position: absolute; left: 0; right: 0; overflow: hidden;
+  }
+  .card-top, .flip-top {
+    top: 0; height: 50%; border-radius: 7px 7px 0 0;
+    background: var(--card-top);
+  }
+  .card-bottom, .flip-bottom {
+    bottom: 0; height: 50%; border-radius: 0 0 7px 7px;
+    background: var(--card-bot);
+  }
+  .card-top::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,.03), rgba(0,0,0,.18));
+    pointer-events: none;
+  }
+  .card-bottom::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,.3), rgba(0,0,0,.05));
+    pointer-events: none;
+  }
+
+  /* ── Digit text ── */
+  .card-top .digit, .card-bottom .digit,
+  .flip-top .digit, .flip-bottom .digit {
+    position: absolute; left: 0; right: 0;
+    height: 200%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 86px;
+    font-family: var(--clock-font);
+    color: var(--digit);
+    text-shadow: 0 0 20px var(--glow), 0 2px 0 rgba(0,0,0,.6);
+    user-select: none;
+  }
+  .card-top .digit, .flip-top .digit      { top: 0; }
+  .card-bottom .digit, .flip-bottom .digit { bottom: 0; }
+
+  /* ── Animated flip panels ── */
+  .flip-top  { transform-origin: center bottom; transform: rotateX(0deg);  z-index: 10; }
+  .flip-top::before {
+    content: ''; position: absolute; inset: 0;
+    background: transparent; transition: background .25s ease-in;
+    pointer-events: none; z-index: 2; border-radius: 7px 7px 0 0;
+  }
+  .flipping .flip-top::before { background: rgba(0,0,0,.55); }
+  .flip-bottom { transform-origin: center top; transform: rotateX(90deg); z-index: 10; }
+
+  .flipping .flip-top    { animation: fold-away .25s ease-in  forwards; }
+  .flipping .flip-bottom { animation: fold-in   .25s ease-out .25s forwards; }
+  @keyframes fold-away { from{transform:rotateX(0)} to{transform:rotateX(-90deg)} }
+  @keyframes fold-in   { from{transform:rotateX(90deg)} to{transform:rotateX(0)} }
+
+  /* ── Expired notice ── */
+  .expired-msg {
+    margin-top: 20px;
+    color: #8b3a00; font-size: 11px; letter-spacing: 6px;
+    font-family: 'Courier New', monospace; text-transform: uppercase;
+    opacity: 0; transition: opacity .8s; min-height: 1.2em; text-align: center;
+  }
+  .expired-msg.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="clock-message" id="clockMsg"></div>
+
+<div class="flip-clock">
+  <div class="flip-unit">
+    <div class="flip-digits">
+      <div class="flip-card" id="d0"></div>
+      <div class="flip-card" id="d1"></div>
+    </div>
+    <div class="unit-label">Days</div>
+  </div>
+  <span class="sep" id="sep0">:</span>
+  <div class="flip-unit">
+    <div class="flip-digits">
+      <div class="flip-card" id="h0"></div>
+      <div class="flip-card" id="h1"></div>
+    </div>
+    <div class="unit-label">Hours</div>
+  </div>
+  <span class="sep" id="sep1">:</span>
+  <div class="flip-unit">
+    <div class="flip-digits">
+      <div class="flip-card" id="m0"></div>
+      <div class="flip-card" id="m1"></div>
+    </div>
+    <div class="unit-label">Minutes</div>
+  </div>
+  <span class="sep" id="sep2">:</span>
+  <div class="flip-unit">
+    <div class="flip-digits">
+      <div class="flip-card" id="s0"></div>
+      <div class="flip-card" id="s1"></div>
+    </div>
+    <div class="unit-label">Seconds</div>
+  </div>
+</div>
+
+<div class="expired-msg" id="expiredMsg">— Time's Up —</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Font table — index must match <select> order in index.html ──
+  var FONTS = [
+    { css: "'Bebas Neue', Impact, sans-serif",        slug: 'Bebas+Neue' },
+    { css: "'Orbitron', sans-serif",                  slug: 'Orbitron:wght@700' },
+    { css: "'Oswald', Impact, sans-serif",            slug: 'Oswald:wght@700' },
+    { css: "'Rajdhani', sans-serif",                  slug: 'Rajdhani:wght@700' },
+    { css: "'VT323', monospace",                      slug: 'VT323' },
+    { css: "'Share Tech Mono', monospace",            slug: 'Share+Tech+Mono' },
+    { css: "'Black Ops One', Impact, sans-serif",     slug: 'Black+Ops+One' },
+    { css: "'Audiowide', sans-serif",                 slug: 'Audiowide' },
+    { css: "'Russo One', Impact, sans-serif",         slug: 'Russo+One' },
+    { css: "'Bungee', Impact, sans-serif",            slug: 'Bungee' },
+  ];
+
+  // ── Read URL params ──────────────────────────────────────
+  var p      = new URLSearchParams(window.location.search);
+  var msg    = p.get('msg')    || '';
+  var tgt    = p.get('target') || '';
+  var bg     = '#' + (p.get('bg')    || '0d0d0d');
+  var card   = '#' + (p.get('card')  || '222222');
+  var digit  = '#' + (p.get('digit') || 'e8a020');
+  var fIdx   = Math.min(9, Math.max(0, parseInt(p.get('font') || '0', 10)));
+  var font   = FONTS[fIdx];
+
+  // ── Colour helpers ───────────────────────────────────────
+  var root = document.documentElement;
+
+  function hexToRgb(hex) { return [1,3,5].map(function(i){ return parseInt(hex.slice(i,i+2),16); }); }
+  function clamp(v,lo,hi) { return Math.max(lo,Math.min(hi,v)); }
+  function shiftHex(hex, d) {
+    return '#' + hexToRgb(hex).map(function(c){ return clamp(c+d,0,255).toString(16).padStart(2,'0'); }).join('');
+  }
+  function hexAlpha(hex, a) { var c=hexToRgb(hex); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
+
+  // ── Apply theme ──────────────────────────────────────────
+  root.style.setProperty('--bg',        bg);
+  root.style.setProperty('--fold-line', bg);
+  root.style.setProperty('--card-top',  shiftHex(card, 14));
+  root.style.setProperty('--card-bot',  shiftHex(card, -10));
+  root.style.setProperty('--digit',     digit);
+  root.style.setProperty('--sep',       digit);
+  root.style.setProperty('--glow',      hexAlpha(digit, 0.28));
+  root.style.setProperty('--clock-font', font.css);
+
+  // Load the selected Google Font
+  document.getElementById('gfont').href =
+    'https://fonts.googleapis.com/css2?family=' + font.slug + '&display=swap';
+
+  // Set message
+  document.getElementById('clockMsg').textContent = msg;
+
+  // ── Target time ──────────────────────────────────────────
+  var target = tgt ? new Date(tgt) : new Date(Date.now() + 3600000);
+
+  // ── Flip card logic ──────────────────────────────────────
+  function pad(n) { n = Math.max(0, Math.floor(n)); return (n < 10 ? '0' : '') + n; }
+
+  function buildCard(el, d) {
+    el.innerHTML =
+      '<div class="card-top"><div class="digit">'    + d + '</div></div>' +
+      '<div class="card-bottom"><div class="digit">' + d + '</div></div>' +
+      '<div class="flip-top"><div class="digit">'    + d + '</div></div>' +
+      '<div class="flip-bottom"><div class="digit">' + d + '</div></div>';
+    el.dataset.v = d;
+  }
+
+  function setCard(el, next) {
+    var prev = el.dataset.v;
+    if (prev === next) return;
+    el.dataset.v = next;
+    var ctD = el.querySelector('.card-top .digit');
+    var cbD = el.querySelector('.card-bottom .digit');
+    var ftD = el.querySelector('.flip-top .digit');
+    var fbD = el.querySelector('.flip-bottom .digit');
+    ftD.textContent = prev; fbD.textContent = next; ctD.textContent = next;
+    el.classList.remove('flipping');
+    void el.offsetWidth;
+    el.classList.add('flipping');
+    setTimeout(function () {
+      cbD.textContent = next; ftD.textContent = next; el.classList.remove('flipping');
+    }, 560);
+  }
+
+  var cardIds  = ['d0','d1','h0','h1','m0','m1','s0','s1'];
+  var cards    = {};
+  cardIds.forEach(function (id) {
+    cards[id] = document.getElementById(id);
+    buildCard(cards[id], '0');
+  });
+
+  var seps      = ['sep0','sep1','sep2'].map(function(id){ return document.getElementById(id); });
+  var expiredEl = document.getElementById('expiredMsg');
+  var sepOn     = true;
+
+  // ── Tick ─────────────────────────────────────────────────
+  function tick() {
+    var diff  = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    var days  = Math.min(Math.floor(diff / 86400), 99);
+    var hours = Math.floor((diff % 86400) / 3600);
+    var mins  = Math.floor((diff % 3600) / 60);
+    var secs  = diff % 60;
+
+    var ds = pad(days), hs = pad(hours), ms = pad(mins), ss = pad(secs);
+    setCard(cards.d0, ds[0]); setCard(cards.d1, ds[1]);
+    setCard(cards.h0, hs[0]); setCard(cards.h1, hs[1]);
+    setCard(cards.m0, ms[0]); setCard(cards.m1, ms[1]);
+    setCard(cards.s0, ss[0]); setCard(cards.s1, ss[1]);
+
+    sepOn = !sepOn;
+    var cls = (diff > 0 && !sepOn) ? 'sep off' : 'sep';
+    seps.forEach(function (s) { s.className = cls; });
+
+    if (diff === 0) expiredEl.classList.add('show');
+    else expiredEl.classList.remove('show');
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>

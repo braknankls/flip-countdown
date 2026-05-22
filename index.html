@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flip Countdown Clock</title>
+<title>Flip Countdown — Configurator</title>
 <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Bebas+Neue&family=Black+Ops+One&family=Bungee&family=Orbitron:wght@700&family=Oswald:wght@700&family=Rajdhani:wght@700&family=Russo+One&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -104,7 +104,6 @@
     z-index: 20; pointer-events: none;
     transition: background 0.35s;
   }
-
   .card-top, .card-bottom, .flip-top, .flip-bottom {
     position: absolute; left: 0; right: 0; overflow: hidden;
   }
@@ -126,8 +125,6 @@
     background: linear-gradient(to bottom, rgba(0,0,0,.3), rgba(0,0,0,.05));
     pointer-events: none;
   }
-
-  /* ── Digit text ── */
   .card-top .digit, .card-bottom .digit,
   .flip-top .digit, .flip-bottom .digit {
     position: absolute; left: 0; right: 0;
@@ -140,10 +137,8 @@
     user-select: none;
     transition: color 0.35s, text-shadow 0.35s;
   }
-  .card-top .digit, .flip-top .digit   { top: 0; }
+  .card-top .digit, .flip-top .digit      { top: 0; }
   .card-bottom .digit, .flip-bottom .digit { bottom: 0; }
-
-  /* ── Animated panels ── */
   .flip-top  { transform-origin: center bottom; transform: rotateX(0deg);  z-index: 10; }
   .flip-top::before {
     content: ''; position: absolute; inset: 0;
@@ -152,7 +147,6 @@
   }
   .flipping .flip-top::before { background: rgba(0,0,0,.55); }
   .flip-bottom { transform-origin: center top; transform: rotateX(90deg); z-index: 10; }
-
   .flipping .flip-top    { animation: fold-away .25s ease-in  forwards; }
   .flipping .flip-bottom { animation: fold-in   .25s ease-out .25s forwards; }
   @keyframes fold-away { from{transform:rotateX(0)} to{transform:rotateX(-90deg)} }
@@ -193,7 +187,6 @@
   .settings select:focus,
   .settings input:focus { border-color: var(--digit); color: #999; }
   .settings select option { background: #111; }
-
   .color-row { display: flex; gap: 20px; align-items: center; }
   .color-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .color-item span {
@@ -210,15 +203,15 @@
   input[type="color"]:hover { border-color: #444; }
   input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
   input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
-
   .settings-divider { border: none; border-top: 1px solid #1a1a1a; margin: 4px 0; }
 
-  /* ── Embed button ── */
-  .embed-wrap {
+  /* ── Canvas embed section ── */
+  .canvas-wrap {
     margin-top: 32px;
+    width: 100%; max-width: 520px;
     display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
-  .embed-btn {
+  .canvas-btn {
     background: transparent;
     border: 1px solid #2a2a2a;
     color: #555;
@@ -231,22 +224,41 @@
     cursor: pointer;
     transition: border-color .2s, color .2s, background .2s;
     display: flex; align-items: center; gap: 8px;
+    width: 100%; justify-content: center;
   }
-  .embed-btn svg { flex-shrink: 0; transition: stroke .2s; }
-  .embed-btn:hover {
+  .canvas-btn svg { flex-shrink: 0; transition: stroke .2s; }
+  .canvas-btn:hover {
     border-color: var(--digit);
     color: var(--digit);
     background: rgba(0,0,0,.2);
   }
-  .embed-btn:hover svg { stroke: var(--digit) !important; }
-  .embed-btn:active { transform: translateY(1px); }
-  .embed-note {
+  .canvas-btn:hover svg { stroke: var(--digit) !important; }
+  .canvas-btn:active { transform: translateY(1px); }
+
+  .url-preview {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #3a3a3a;
+    word-break: break-all;
+    line-height: 1.5;
+    cursor: text;
+    user-select: all;
+    display: none;
+  }
+  .url-preview.visible { display: block; border-color: #2a2a2a; color: #555; }
+
+  .canvas-note {
     color: #2a2a2a; font-size: 9px; letter-spacing: 2px;
     font-family: 'Courier New', monospace; text-transform: uppercase;
-    text-align: center;
+    text-align: center; line-height: 1.8;
   }
 
-  /* ── Toast notification ── */
+  /* ── Toast ── */
   .toast {
     position: fixed; bottom: 28px; left: 50%;
     transform: translateX(-50%) translateY(8px);
@@ -258,9 +270,7 @@
     opacity: 0; transition: opacity .3s, transform .3s;
     pointer-events: none; z-index: 9999;
   }
-  .toast.show {
-    opacity: 1; transform: translateX(-50%) translateY(0);
-  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -305,26 +315,23 @@
 
 <div class="expired-msg" id="expiredMsg">— Time's Up —</div>
 
-<!-- Settings -->
 <div class="settings">
   <hr class="settings-divider">
-
   <div class="setting-row">
     <span class="setting-label">Font</span>
     <select id="fontSelect">
-      <option value="'Bebas Neue', Impact, sans-serif">Bebas Neue — Classic Display</option>
-      <option value="'Orbitron', sans-serif">Orbitron — Sci-Fi Digital</option>
-      <option value="'Oswald', Impact, sans-serif">Oswald — Bold Condensed</option>
-      <option value="'Rajdhani', sans-serif">Rajdhani — Geometric Sans</option>
-      <option value="'VT323', monospace">VT323 — Pixel Terminal</option>
-      <option value="'Share Tech Mono', monospace">Share Tech Mono — Tech Mono</option>
-      <option value="'Black Ops One', Impact, sans-serif">Black Ops One — Military</option>
-      <option value="'Audiowide', sans-serif">Audiowide — Futuristic</option>
-      <option value="'Russo One', Impact, sans-serif">Russo One — Bold Clean</option>
-      <option value="'Bungee', Impact, sans-serif">Bungee — Retro Display</option>
+      <option value="0">Bebas Neue — Classic Display</option>
+      <option value="1">Orbitron — Sci-Fi Digital</option>
+      <option value="2">Oswald — Bold Condensed</option>
+      <option value="3">Rajdhani — Geometric Sans</option>
+      <option value="4">VT323 — Pixel Terminal</option>
+      <option value="5">Share Tech Mono — Tech Mono</option>
+      <option value="6">Black Ops One — Military</option>
+      <option value="7">Audiowide — Futuristic</option>
+      <option value="8">Russo One — Bold Clean</option>
+      <option value="9">Bungee — Retro Display</option>
     </select>
   </div>
-
   <div class="setting-row">
     <span class="setting-label">Colors</span>
     <div class="color-row">
@@ -342,23 +349,25 @@
       </div>
     </div>
   </div>
-
   <div class="setting-row">
     <span class="setting-label">Target</span>
     <input type="datetime-local" id="targetDT">
   </div>
 </div>
 
-<!-- Embed -->
-<div class="embed-wrap">
-  <button class="embed-btn" id="embedBtn">
+<div class="canvas-wrap">
+  <button class="canvas-btn" id="canvasBtn">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
          stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+      <rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/>
     </svg>
-    Copy Embed Code
+    Copy Canvas Embed
   </button>
-  <p class="embed-note">Paste into Canvas HTML editor &mdash; requires JavaScript enabled</p>
+  <div class="url-preview" id="urlPreview"></div>
+  <p class="canvas-note">
+    Canvas: Edit Page &rarr; HTML Editor &lt;/&gt; &rarr; paste at top<br>
+    Or give students the URL shown above directly
+  </p>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -367,64 +376,49 @@
 (function () {
   'use strict';
 
-  // ── Helpers ──────────────────────────────────────────────
-  const pad = n => String(Math.max(0, Math.floor(n))).padStart(2, '0');
-  const z2  = n => String(n).padStart(2, '0');
-  const root = document.documentElement;
+  var FONTS = [
+    { css: "'Bebas Neue', Impact, sans-serif",        slug: 'Bebas+Neue' },
+    { css: "'Orbitron', sans-serif",                  slug: 'Orbitron:wght@700' },
+    { css: "'Oswald', Impact, sans-serif",            slug: 'Oswald:wght@700' },
+    { css: "'Rajdhani', sans-serif",                  slug: 'Rajdhani:wght@700' },
+    { css: "'VT323', monospace",                      slug: 'VT323' },
+    { css: "'Share Tech Mono', monospace",            slug: 'Share+Tech+Mono' },
+    { css: "'Black Ops One', Impact, sans-serif",     slug: 'Black+Ops+One' },
+    { css: "'Audiowide', sans-serif",                 slug: 'Audiowide' },
+    { css: "'Russo One', Impact, sans-serif",         slug: 'Russo+One' },
+    { css: "'Bungee', Impact, sans-serif",            slug: 'Bungee' },
+  ];
 
-  function hexToRgb(hex) {
-    return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  var pad  = function(n){ n=Math.max(0,Math.floor(n)); return (n<10?'0':'')+n; };
+  var z2   = function(n){ return String(n).padStart(2,'0'); };
+  var root = document.documentElement;
+
+  function hexToRgb(hex){ return [1,3,5].map(function(i){ return parseInt(hex.slice(i,i+2),16); }); }
+  function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+  function shiftHex(hex,d){
+    return '#'+hexToRgb(hex).map(function(c){ return clamp(c+d,0,255).toString(16).padStart(2,'0'); }).join('');
   }
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function shiftHex(hex, delta) {
-    return '#' + hexToRgb(hex)
-      .map(c => clamp(c + delta, 0, 255).toString(16).padStart(2, '0'))
-      .join('');
-  }
-  function hexAlpha(hex, a) {
-    const [r, g, b] = hexToRgb(hex);
-    return `rgba(${r},${g},${b},${a})`;
-  }
-  function toInputVal(d) {
-    return `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}` +
-           `T${z2(d.getHours())}:${z2(d.getMinutes())}`;
-  }
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function hexAlpha(hex,a){ var c=hexToRgb(hex); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
+  function toInputVal(d){
+    return d.getFullYear()+'-'+z2(d.getMonth()+1)+'-'+z2(d.getDate())+'T'+z2(d.getHours())+':'+z2(d.getMinutes());
   }
 
-  // ── Google Fonts slug per font-family value ───────────────
-  const FONT_SLUGS = {
-    "'Bebas Neue', Impact, sans-serif":        'Bebas+Neue',
-    "'Orbitron', sans-serif":                  'Orbitron:wght@700',
-    "'Oswald', Impact, sans-serif":            'Oswald:wght@700',
-    "'Rajdhani', sans-serif":                  'Rajdhani:wght@700',
-    "'VT323', monospace":                      'VT323',
-    "'Share Tech Mono', monospace":            'Share+Tech+Mono',
-    "'Black Ops One', Impact, sans-serif":     'Black+Ops+One',
-    "'Audiowide', sans-serif":                 'Audiowide',
-    "'Russo One', Impact, sans-serif":         'Russo+One',
-    "'Bungee', Impact, sans-serif":            'Bungee',
-  };
+  var target = new Date(Date.now() + 60 * 60 * 1000);
 
-  // ── Default target: 1 hr from now ────────────────────────
-  let target = new Date(Date.now() + 60 * 60 * 1000);
+  var msgEl      = document.getElementById('clockMessage');
+  var fontSel    = document.getElementById('fontSelect');
+  var colorBg    = document.getElementById('colorBg');
+  var colorCard  = document.getElementById('colorCard');
+  var colorDigit = document.getElementById('colorDigit');
+  var dtInput    = document.getElementById('targetDT');
+  var expiredMsg = document.getElementById('expiredMsg');
+  var canvasBtn  = document.getElementById('canvasBtn');
+  var urlPreview = document.getElementById('urlPreview');
+  var toastEl    = document.getElementById('toast');
+  var seps       = ['sep0','sep1','sep2'].map(function(id){ return document.getElementById(id); });
 
-  // ── DOM refs ──────────────────────────────────────────────
-  const msgEl      = document.getElementById('clockMessage');
-  const fontSel    = document.getElementById('fontSelect');
-  const colorBg    = document.getElementById('colorBg');
-  const colorCard  = document.getElementById('colorCard');
-  const colorDigit = document.getElementById('colorDigit');
-  const dtInput    = document.getElementById('targetDT');
-  const expiredMsg = document.getElementById('expiredMsg');
-  const embedBtn   = document.getElementById('embedBtn');
-  const toastEl    = document.getElementById('toast');
-  const seps       = ['sep0','sep1','sep2'].map(id => document.getElementById(id));
-
-  // ── Theme ─────────────────────────────────────────────────
   function applyColors() {
-    const bg = colorBg.value, card = colorCard.value, digit = colorDigit.value;
+    var bg=colorBg.value, card=colorCard.value, digit=colorDigit.value;
     root.style.setProperty('--bg',        bg);
     root.style.setProperty('--fold-line', bg);
     root.style.setProperty('--card-top',  shiftHex(card, 14));
@@ -433,14 +427,15 @@
     root.style.setProperty('--sep',       digit);
     root.style.setProperty('--glow',      hexAlpha(digit, 0.28));
   }
-  function applyFont(val) { root.style.setProperty('--clock-font', val); }
+  function applyFont(idx) {
+    root.style.setProperty('--clock-font', FONTS[idx].css);
+  }
 
-  // ── Persistence ───────────────────────────────────────────
-  const STORE = 'flipClockV2';
+  var STORE = 'flipClockV2';
   function save() {
     try {
       localStorage.setItem(STORE, JSON.stringify({
-        msg: msgEl.textContent.trim(), font: fontSel.value,
+        msg: msgEl.textContent.trim(), font: parseInt(fontSel.value,10),
         bg: colorBg.value, card: colorCard.value, digit: colorDigit.value,
         tgt: target.toISOString(),
       }));
@@ -448,230 +443,112 @@
   }
   function load() {
     try {
-      const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+      var s = JSON.parse(localStorage.getItem(STORE) || 'null');
       if (!s) return;
-      if (s.msg)   msgEl.textContent = s.msg;
-      if (s.font)  { fontSel.value = s.font; applyFont(s.font); }
-      if (s.bg)    colorBg.value    = s.bg;
-      if (s.card)  colorCard.value  = s.card;
-      if (s.digit) colorDigit.value = s.digit;
-      if (s.bg || s.card || s.digit) applyColors();
-      if (s.tgt)   { target = new Date(s.tgt); dtInput.value = toInputVal(target); }
+      if (s.msg)           msgEl.textContent = s.msg;
+      if (s.font != null)  { fontSel.value = s.font; applyFont(s.font); }
+      if (s.bg)            colorBg.value    = s.bg;
+      if (s.card)          colorCard.value  = s.card;
+      if (s.digit)         colorDigit.value = s.digit;
+      if (s.bg||s.card||s.digit) applyColors();
+      if (s.tgt)           { target = new Date(s.tgt); dtInput.value = toInputVal(target); }
     } catch(e) {}
   }
 
-  // ── Flip card logic ───────────────────────────────────────
-  function buildCard(el, digit) {
+  function buildCard(el, d) {
     el.innerHTML =
-      `<div class="card-top"><div class="digit">${digit}</div></div>` +
-      `<div class="card-bottom"><div class="digit">${digit}</div></div>` +
-      `<div class="flip-top"><div class="digit">${digit}</div></div>` +
-      `<div class="flip-bottom"><div class="digit">${digit}</div></div>`;
-    el.dataset.v = digit;
+      '<div class="card-top"><div class="digit">'    + d + '</div></div>' +
+      '<div class="card-bottom"><div class="digit">' + d + '</div></div>' +
+      '<div class="flip-top"><div class="digit">'    + d + '</div></div>' +
+      '<div class="flip-bottom"><div class="digit">' + d + '</div></div>';
+    el.dataset.v = d;
   }
   function setCard(el, next) {
-    const prev = el.dataset.v;
+    var prev = el.dataset.v;
     if (prev === next) return;
     el.dataset.v = next;
-    const ctD = el.querySelector('.card-top .digit');
-    const cbD = el.querySelector('.card-bottom .digit');
-    const ftD = el.querySelector('.flip-top .digit');
-    const fbD = el.querySelector('.flip-bottom .digit');
-    ftD.textContent = prev; fbD.textContent = next; ctD.textContent = next;
-    el.classList.remove('flipping');
-    void el.offsetWidth;
-    el.classList.add('flipping');
-    setTimeout(() => { cbD.textContent = next; ftD.textContent = next; el.classList.remove('flipping'); }, 560);
+    var ctD=el.querySelector('.card-top .digit'), cbD=el.querySelector('.card-bottom .digit'),
+        ftD=el.querySelector('.flip-top .digit'),  fbD=el.querySelector('.flip-bottom .digit');
+    ftD.textContent=prev; fbD.textContent=next; ctD.textContent=next;
+    el.classList.remove('flipping'); void el.offsetWidth; el.classList.add('flipping');
+    setTimeout(function(){ cbD.textContent=next; ftD.textContent=next; el.classList.remove('flipping'); }, 560);
   }
 
-  const cardIds = ['d0','d1','h0','h1','m0','m1','s0','s1'];
-  const cards = {};
-  cardIds.forEach(id => { cards[id] = document.getElementById(id); buildCard(cards[id], '0'); });
+  var cardIds=['d0','d1','h0','h1','m0','m1','s0','s1'], cards={};
+  cardIds.forEach(function(id){ cards[id]=document.getElementById(id); buildCard(cards[id],'0'); });
 
-  // ── Tick ──────────────────────────────────────────────────
-  let sepOn = true;
+  var sepOn = true;
   function tick() {
-    const diff  = Math.max(0, Math.floor((target - Date.now()) / 1000));
-    const days  = Math.min(Math.floor(diff / 86400), 99);
-    const hours = Math.floor((diff % 86400) / 3600);
-    const mins  = Math.floor((diff % 3600) / 60);
-    const secs  = diff % 60;
-    const ds = pad(days), hs = pad(hours), ms = pad(mins), ss = pad(secs);
+    var diff  = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    var days  = Math.min(Math.floor(diff / 86400), 99);
+    var hours = Math.floor((diff % 86400) / 3600);
+    var mins  = Math.floor((diff % 3600) / 60);
+    var secs  = diff % 60;
+    var ds=pad(days), hs=pad(hours), ms=pad(mins), ss=pad(secs);
     setCard(cards.d0,ds[0]); setCard(cards.d1,ds[1]);
     setCard(cards.h0,hs[0]); setCard(cards.h1,hs[1]);
     setCard(cards.m0,ms[0]); setCard(cards.m1,ms[1]);
     setCard(cards.s0,ss[0]); setCard(cards.s1,ss[1]);
     sepOn = !sepOn;
-    const cls = (diff > 0 && !sepOn) ? 'sep off' : 'sep';
-    seps.forEach(s => s.className = cls);
-    if (diff === 0) expiredMsg.classList.add('show');
+    seps.forEach(function(s){ s.className = (diff>0&&!sepOn)?'sep off':'sep'; });
+    if (diff===0) expiredMsg.classList.add('show');
     else expiredMsg.classList.remove('show');
   }
 
-  // ── Generate embed HTML ───────────────────────────────────
-  function generateEmbed() {
-    const msg    = msgEl.textContent.trim() || 'Countdown';
-    const font   = fontSel.value;
-    const bg     = colorBg.value;
-    const card   = colorCard.value;
-    const digit  = colorDigit.value;
-    const ctop   = shiftHex(card, 14);
-    const cbot   = shiftHex(card, -10);
-    const glow   = hexAlpha(digit, 0.28);
-    const tgtISO = target.toISOString();
-    // Unique ID so multiple embeds on same page don't collide
-    const uid    = 'fcc' + Math.random().toString(36).slice(2, 9);
-    const gfSlug = FONT_SLUGS[font] || 'Bebas+Neue';
-
-    const css =
-`@import url('https://fonts.googleapis.com/css2?family=${gfSlug}&display=swap');
-#${uid}{background:${bg};display:flex;flex-direction:column;align-items:center;padding:36px 20px;box-sizing:border-box;width:100%}
-#${uid} .fcc-msg{color:#888;font-size:11px;letter-spacing:8px;font-family:'Courier New',monospace;text-transform:uppercase;margin-bottom:32px;text-align:center}
-#${uid} .fcc-clk{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;justify-content:center}
-#${uid} .fcc-unit{display:flex;flex-direction:column;align-items:center}
-#${uid} .fcc-digs{display:flex;gap:4px}
-#${uid} .fcc-lbl{margin-top:10px;color:#333;font-size:9px;letter-spacing:4px;font-family:'Courier New',monospace;text-transform:uppercase}
-#${uid} .fcc-sep{font-size:76px;color:${digit};line-height:100px;padding:0 2px;user-select:none;font-family:${font};text-shadow:0 0 18px ${glow};transition:opacity .12s}
-#${uid} .fcc-sep.off{opacity:.12}
-#${uid} .fcc-card{position:relative;width:72px;height:100px;perspective:280px;border-radius:7px;box-shadow:0 6px 16px rgba(0,0,0,.7),0 2px 4px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04)}
-#${uid} .fcc-card::after{content:'';position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;background:${bg};z-index:20;pointer-events:none}
-#${uid} .fcc-ct,#${uid} .fcc-ft{position:absolute;top:0;left:0;right:0;height:50%;overflow:hidden;border-radius:7px 7px 0 0;background:${ctop}}
-#${uid} .fcc-cb,#${uid} .fcc-fb{position:absolute;bottom:0;left:0;right:0;height:50%;overflow:hidden;border-radius:0 0 7px 7px;background:${cbot}}
-#${uid} .fcc-ct::after{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(to bottom,rgba(255,255,255,.03),rgba(0,0,0,.18));pointer-events:none}
-#${uid} .fcc-cb::after{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(to bottom,rgba(0,0,0,.3),rgba(0,0,0,.05));pointer-events:none}
-#${uid} .fcc-ct .fcc-d,#${uid} .fcc-cb .fcc-d,#${uid} .fcc-ft .fcc-d,#${uid} .fcc-fb .fcc-d{position:absolute;left:0;right:0;height:200%;display:flex;justify-content:center;align-items:center;font-size:86px;font-family:${font};color:${digit};text-shadow:0 0 20px ${glow},0 2px 0 rgba(0,0,0,.6);user-select:none}
-#${uid} .fcc-ct .fcc-d,#${uid} .fcc-ft .fcc-d{top:0}
-#${uid} .fcc-cb .fcc-d,#${uid} .fcc-fb .fcc-d{bottom:0}
-#${uid} .fcc-ft{transform-origin:center bottom;transform:rotateX(0deg);z-index:10}
-#${uid} .fcc-ft::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:transparent;transition:background .25s ease-in;pointer-events:none;z-index:2;border-radius:7px 7px 0 0}
-#${uid} .flipping .fcc-ft::before{background:rgba(0,0,0,.55)}
-#${uid} .fcc-fb{transform-origin:center top;transform:rotateX(90deg);z-index:10}
-#${uid} .flipping .fcc-ft{animation:fccA_${uid} .25s ease-in forwards}
-#${uid} .flipping .fcc-fb{animation:fccB_${uid} .25s ease-out .25s forwards}
-#${uid} .fcc-exp{color:#8b3a00;font-size:11px;letter-spacing:6px;font-family:'Courier New',monospace;text-transform:uppercase;opacity:0;transition:opacity .8s;margin-top:24px;min-height:1.2em;text-align:center}
-#${uid} .fcc-exp.show{opacity:1}
-@keyframes fccA_${uid}{from{transform:rotateX(0)}to{transform:rotateX(-90deg)}}
-@keyframes fccB_${uid}{from{transform:rotateX(90deg)}to{transform:rotateX(0)}}`;
-
-    const card2 = (id) => `<div class="fcc-card" id="${id}${uid}"></div>`;
-    const unit  = (lbl, a, b) =>
-      `<div class="fcc-unit"><div class="fcc-digs">${card2(a)}${card2(b)}</div>` +
-      `<div class="fcc-lbl">${lbl}</div></div>`;
-
-    const html =
-`<div id="${uid}">
-  <p class="fcc-msg">${escHtml(msg)}</p>
-  <div class="fcc-clk">
-    ${unit('Days','d0','d1')}
-    <span class="fcc-sep">:</span>
-    ${unit('Hours','h0','h1')}
-    <span class="fcc-sep">:</span>
-    ${unit('Minutes','m0','m1')}
-    <span class="fcc-sep">:</span>
-    ${unit('Seconds','s0','s1')}
-  </div>
-  <div class="fcc-exp"></div>
-</div>`;
-
-    // Compact JS — uses ES5-compatible helpers for broadest browser support
-    const js =
-`(function(){
-var U='${uid}',target=new Date('${tgtISO}');
-function pad(n){n=Math.max(0,Math.floor(n));return(n<10?'0':'')+n}
-var wrap=document.getElementById(U);
-var seps=wrap.querySelectorAll('.fcc-sep');
-var exp=wrap.querySelector('.fcc-exp');
-function build(el,d){
-  el.innerHTML='<div class="fcc-ct"><div class="fcc-d">'+d+'</div></div>'+
-    '<div class="fcc-cb"><div class="fcc-d">'+d+'</div></div>'+
-    '<div class="fcc-ft"><div class="fcc-d">'+d+'</div></div>'+
-    '<div class="fcc-fb"><div class="fcc-d">'+d+'</div></div>';
-  el.dataset.v=d;
-}
-function flip(el,n){
-  var p=el.dataset.v; if(p===n)return; el.dataset.v=n;
-  var ctd=el.querySelector('.fcc-ct .fcc-d'),cbd=el.querySelector('.fcc-cb .fcc-d'),
-      ftd=el.querySelector('.fcc-ft .fcc-d'),fbd=el.querySelector('.fcc-fb .fcc-d');
-  ftd.textContent=p; fbd.textContent=n; ctd.textContent=n;
-  el.classList.remove('flipping'); void el.offsetWidth; el.classList.add('flipping');
-  setTimeout(function(){cbd.textContent=n;ftd.textContent=n;el.classList.remove('flipping')},560);
-}
-var ids=['d0','d1','h0','h1','m0','m1','s0','s1'],cards={};
-ids.forEach(function(id){var el=document.getElementById(id+U);build(el,'0');cards[id]=el});
-var on=true;
-function tick(){
-  var diff=Math.max(0,Math.floor((target-Date.now())/1000));
-  var d=Math.min(Math.floor(diff/86400),99),h=Math.floor((diff%86400)/3600),
-      m=Math.floor((diff%3600)/60),s=diff%60;
-  var ds=pad(d),hs=pad(h),ms=pad(m),ss=pad(s);
-  flip(cards.d0,ds[0]);flip(cards.d1,ds[1]);
-  flip(cards.h0,hs[0]);flip(cards.h1,hs[1]);
-  flip(cards.m0,ms[0]);flip(cards.m1,ms[1]);
-  flip(cards.s0,ss[0]);flip(cards.s1,ss[1]);
-  on=!on;
-  var cls=(diff>0&&!on)?'fcc-sep off':'fcc-sep';
-  seps.forEach(function(s){s.className=cls});
-  if(diff===0)exp.classList.add('show');else exp.classList.remove('show');
-  if(diff===0)exp.textContent='— Time’s Up —';
-}
-tick(); setInterval(tick,1000);
-})();`;
-
-    return `<!-- Flip Countdown Clock -->\n<style>\n${css}\n</style>\n\n${html}\n\n<script>\n${js}\n<\/script>`;
+  function buildClockUrl() {
+    var msg   = msgEl.textContent.trim();
+    var fIdx  = parseInt(fontSel.value, 10);
+    var bg    = colorBg.value.slice(1);
+    var card  = colorCard.value.slice(1);
+    var digit = colorDigit.value.slice(1);
+    var tgt   = target.toISOString();
+    var dir   = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    var params = new URLSearchParams({ msg:msg, target:tgt, bg:bg, card:card, digit:digit, font:fIdx });
+    return dir + 'clock.html?' + params.toString();
   }
 
-  // ── Toast ─────────────────────────────────────────────────
-  let toastTimer;
+  function generateIframe() {
+    return '<iframe src="' + buildClockUrl() + '" ' +
+      'width="100%" height="260" frameborder="0" scrolling="no" ' +
+      'style="border:none;display:block" title="Countdown Clock"></iframe>';
+  }
+
+  var toastTimer;
   function showToast(msg) {
     clearTimeout(toastTimer);
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2800);
   }
-
-  // ── Embed button ──────────────────────────────────────────
-  embedBtn.addEventListener('click', () => {
-    const code = generateEmbed();
+  function copyText(text, label) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code)
-        .then(() => showToast('Embed code copied to clipboard'))
-        .catch(() => fallbackCopy(code));
-    } else {
-      fallbackCopy(code);
-    }
-  });
-
-  function fallbackCopy(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try {
-      document.execCommand('copy');
-      showToast('Embed code copied to clipboard');
-    } catch(e) {
-      showToast('Copy failed — try Ctrl+C');
-    }
+      navigator.clipboard.writeText(text).then(function(){ showToast(label); }).catch(function(){ fallback(text,label); });
+    } else { fallback(text,label); }
+  }
+  function fallback(text, label) {
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); showToast(label); }
+    catch(e){ showToast('Select the URL above and press Ctrl+C'); }
     document.body.removeChild(ta);
   }
 
-  // ── Wire controls ─────────────────────────────────────────
-  dtInput.value = toInputVal(target);
-  dtInput.addEventListener('change', () => {
-    if (dtInput.value) { target = new Date(dtInput.value); save(); }
-    expiredMsg.classList.remove('show');
-  });
-  fontSel.addEventListener('change', () => { applyFont(fontSel.value); save(); });
-  [colorBg, colorCard, colorDigit].forEach(el =>
-    el.addEventListener('input', () => { applyColors(); save(); })
-  );
-  msgEl.addEventListener('input', save);
-  msgEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); msgEl.blur(); }
+  canvasBtn.addEventListener('click', function () {
+    copyText(generateIframe(), 'Canvas iframe copied!');
+    urlPreview.textContent = buildClockUrl();
+    urlPreview.classList.add('visible');
   });
 
-  // ── Boot ──────────────────────────────────────────────────
+  function hidePreview(){ urlPreview.classList.remove('visible'); }
+
+  dtInput.value = toInputVal(target);
+  dtInput.addEventListener('change', function(){ if(dtInput.value){ target=new Date(dtInput.value); save(); } expiredMsg.classList.remove('show'); hidePreview(); });
+  fontSel.addEventListener('change', function(){ applyFont(parseInt(fontSel.value,10)); save(); hidePreview(); });
+  [colorBg,colorCard,colorDigit].forEach(function(el){ el.addEventListener('input', function(){ applyColors(); save(); hidePreview(); }); });
+  msgEl.addEventListener('input', function(){ save(); hidePreview(); });
+  msgEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); msgEl.blur(); } });
+
   load();
   applyColors();
   tick();
